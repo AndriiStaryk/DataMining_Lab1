@@ -3,3 +3,6 @@ praw
 python-dotenv
 nltk
 textblob
+matplotlib
+seaborn
+wordcloud
