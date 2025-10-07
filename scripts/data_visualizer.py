@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from wordcloud import WordCloud
 import os
-import config 
-
+from collections import Counter
+import config
 
 def create_sentiment_distribution_plots(df):
     """Generates and saves a bar and pie chart for sentiment distribution."""
@@ -15,7 +15,7 @@ def create_sentiment_distribution_plots(df):
     # Bar Chart
     plt.figure(figsize=(8, 6))
     sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values, palette="viridis")
-    plt.title('Sentiment Distribution of r/Apple Posts', fontsize=16)
+    plt.title(f'Sentiment Distribution of r/{config.TARGET_SUBREDDIT} Posts', fontsize=16)
     plt.xlabel('Sentiment', fontsize=12)
     plt.ylabel('Number of Posts', fontsize=12)
     plt.xticks(fontsize=11)
@@ -28,48 +28,61 @@ def create_sentiment_distribution_plots(df):
     plt.figure(figsize=(8, 8))
     plt.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%',
             startangle=140, colors=sns.color_palette("viridis", len(sentiment_counts)))
-    plt.title('Sentiment Distribution of r/Apple Posts', fontsize=16)
+    plt.title(f'Sentiment Distribution of r/{config.TARGET_SUBREDDIT} Posts', fontsize=16)
     plt.ylabel('')
     pie_chart_path = os.path.join(config.VISUALIZATIONS_DIR, 'sentiment_distribution_pie.png')
-    plt.savefig(pie_chart_path, dpi=300) # Added dpi for higher quality
+    plt.savefig(pie_chart_path, dpi=300)
     print(f"  - Pie chart saved to {os.path.abspath(pie_chart_path)}")
     plt.close()
 
 def create_word_clouds(df):
-    """Generates and saves high-resolution (4K) word clouds."""
-    print("Generating high-resolution word clouds (4K)...")
+    """Generates and saves high-resolution word clouds for distinctive words in each sentiment."""
+    print("Generating high-resolution word clouds for distinctive words (4K)...")
 
-    # Positive Word Cloud
-    positive_text = " ".join(text for text in df[df['sentiment_label'] == 'Positive']['cleaned_text'])
-    if positive_text:
-        # Increased width and height for 4K resolution
-        wordcloud_positive = WordCloud(width=3840, height=2160, background_color='white').generate(positive_text)
-        plt.figure(figsize=(16, 9)) # Aspect ratio for 4K
+    # --- Find Distinctive Words ---
+    positive_words = Counter(" ".join(df[df['sentiment_label'] == 'Positive']['cleaned_text']).split())
+    negative_words = Counter(" ".join(df[df['sentiment_label'] == 'Negative']['cleaned_text']).split())
+
+    # Get the top 100 most common words for each sentiment
+    top_positive = set(word for word, count in positive_words.most_common(100))
+    top_negative = set(word for word, count in negative_words.most_common(100))
+    
+    # Find words that are in the top of one list but not the other
+    distinct_positive_words = top_positive - top_negative
+    distinct_negative_words = top_negative - top_positive
+
+    # Filter the original counters to only include these distinctive words
+    positive_words = {word: count for word, count in positive_words.items() if word in distinct_positive_words}
+    negative_words = {word: count for word, count in negative_words.items() if word in distinct_negative_words}
+
+    # --- Generate Word Clouds ---
+    # Positive Word Cloud (with your requested style)
+    if positive_words:
+        wordcloud_positive = WordCloud(width=3840, height=2160, background_color='black', colormap='Greens').generate_from_frequencies(positive_words)
+        plt.figure(figsize=(16, 9))
         plt.imshow(wordcloud_positive, interpolation='bilinear')
         plt.axis("off")
-        plt.title('Most Common Words in Positive Posts (4K)', fontsize=20)
-        positive_wc_path = os.path.join(config.VISUALIZATIONS_DIR, 'wordcloud_positive_4k.png')
-        plt.savefig(positive_wc_path, dpi=300, bbox_inches='tight') # High DPI and tight layout
-        print(f"  - Positive word cloud saved to {os.path.abspath(positive_wc_path)}")
+        plt.title('Distinctive Words in Positive Posts (4K)', fontsize=20)
+        positive_wc_path = os.path.join(config.VISUALIZATIONS_DIR, 'wordcloud_positive_distinct_4k.png')
+        plt.savefig(positive_wc_path, dpi=300, bbox_inches='tight')
+        print(f"  - Distinctive positive word cloud saved to {os.path.abspath(positive_wc_path)}")
         plt.close()
     else:
-        print("  - No positive text found to generate a word cloud.")
+        print("  - Not enough distinctive positive words found to generate a word cloud.")
 
     # Negative Word Cloud
-    negative_text = " ".join(text for text in df[df['sentiment_label'] == 'Negative']['cleaned_text'])
-    if negative_text:
-        # Increased width and height for 4K resolution
-        wordcloud_negative = WordCloud(width=3840, height=2160, background_color='black', colormap='Reds').generate(negative_text)
-        plt.figure(figsize=(16, 9)) # Aspect ratio for 4K
+    if negative_words:
+        wordcloud_negative = WordCloud(width=3840, height=2160, background_color='black', colormap='Reds').generate_from_frequencies(negative_words)
+        plt.figure(figsize=(16, 9))
         plt.imshow(wordcloud_negative, interpolation='bilinear')
         plt.axis("off")
-        plt.title('Most Common Words in Negative Posts (4K)', fontsize=20)
-        negative_wc_path = os.path.join(config.VISUALIZATIONS_DIR, 'wordcloud_negative_4k.png')
-        plt.savefig(negative_wc_path, dpi=300, bbox_inches='tight') # High DPI and tight layout
-        print(f"  - Negative word cloud saved to {os.path.abspath(negative_wc_path)}")
+        plt.title('Distinctive Words in Negative Posts (4K)', fontsize=20)
+        negative_wc_path = os.path.join(config.VISUALIZATIONS_DIR, 'wordcloud_negative_distinct_4k.png')
+        plt.savefig(negative_wc_path, dpi=300, bbox_inches='tight')
+        print(f"  - Distinctive negative word cloud saved to {os.path.abspath(negative_wc_path)}")
         plt.close()
     else:
-        print("  - No negative text found to generate a word cloud.")
+        print("  - Not enough distinctive negative words found to generate a word cloud.")
 
 def main():
     """Main function to load data and generate all visualizations."""
@@ -93,3 +106,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

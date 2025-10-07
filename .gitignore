@@ -1,9 +1,12 @@
 *.env
 venv/
 *.csv
-data/
-visualizations/
 
+data_Apple/
+visualizations_Apple/
+
+data_Samsung/
+visualizations_Samsung/
 
 __pycache__/
 *.py[cod]

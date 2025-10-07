@@ -3,6 +3,7 @@ import scripts.data_preprocessor as data_preprocessor
 import scripts.sentiment_analyzer as sentiment_analyzer
 import scripts.data_visualizer as data_visualizer
 import os
+import config
 
 def run_pipeline():
     """
@@ -55,9 +56,9 @@ def run_pipeline():
 if __name__ == '__main__':
     # Ensure data and visualizations directories exist
     # This is a good practice to ensure the directories are ready before the pipeline starts.
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    if not os.path.exists('visualizations'):
-        os.makedirs('visualizations')
+    if not os.path.exists(config.DATA_DIR):
+        os.makedirs(config.DATA_DIR)
+    if not os.path.exists(config.VISUALIZATIONS_DIR):
+        os.makedirs(config.VISUALIZATIONS_DIR)
         
     run_pipeline()
